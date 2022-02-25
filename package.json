@@ -4,20 +4,22 @@
   "description": "",
   "main": "app.ts",
   "scripts": {
-    "start": "tsc && ts-node --unhandled-rejections=strict ./dist/app.js",
+    "start": "tsc && ts-node ./dist/app.js",
     "dev": "tsc && ts-node-dev ./dist/app.js",
     "debug": "export DEBUG=* && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:migrate": "npx prisma migrate dev --name init",
-    "prisma:generate": "npx prisma generate"  
+    "prisma:generate": "npx prisma generate"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/morgan": "^1.9.3",
     "cors": "^2.8.5",
     "debug": "^4.3.3",
     "express": "^4.17.3",
     "express-winston": "^4.2.0",
+    "morgan": "^1.10.0",
     "winston": "^3.6.0"
   },
   "devDependencies": {
