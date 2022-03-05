@@ -89,6 +89,7 @@ model Freelancer {
   contracts    Contract[]
   skills       Skill[]
   tests Test[]
+  results TestResults[]
   // contract Contract
   // language Language @relation(fields: [languages], references: [id])
 }
@@ -113,6 +114,7 @@ model Certification {
 model Test{
   id        Int                   @id @default(autoincrement())
   freelancers Freelancer[]
+  results TestResults[]
 }
 
 // table `TestResults` 
