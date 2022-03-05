@@ -9,172 +9,241 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id Int @id @default(autoincrement())
-  firstName String?
-  lastName String?
-  email String @unique
-  password String?
+// split data model into four subject area
+// 1. Clients
+// 2. Freelancers
+// 3. Job Posts
+// 4. Proposals and Contracts
+//
+// and three standalone tables
+// 1. User
+// 2. Skill
+// 3. PaymentType
+
+// Standalone tables
+model User {
+  id               String         @id @default(cuid())
+  firstName        String?
+  lastName         String?
+  email            String      @unique
+  password         String?
   securityQuestion String
-  gender String?
-  dateOfBirth DateTime?
-  profilePicture String?
-  isLastLogged DateTime?
-  isVerified Boolean @default(false)
-  client Client? 
-  freelancer Freelancer?
+  gender           String?
+  dateOfBirth      DateTime?
+  profilePicture   String?
+  isLastLogged     DateTime?
+  isVerified       Boolean     @default(false)
+  client           Client?
+  freelancer       Freelancer?
 
 }
 
-model PaymentType{
+model PaymentType {
   // atleast two values here : 'fixed' and 'per hour'
-  id Int @id @default(autoincrement())
-  name String @unique
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  contract Contract?
 }
 
-model Company{
-  id Int @id @default(autoincrement())
-  name String
-  location String
-  clients Client[]
+model Skill {
+  id         Int          @id @default(autoincrement())
+  name       String       @unique
+  freelancer Freelancer[]
+  otherSkill OtherSkills[]
 }
 
-model Client{
-  userId Int @unique
+model Company {
+  id        Int        @id @default(autoincrement())
+  name      String
+  location  String
+  clients   Client[]
+  contracts Contract[]
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  userId    String      @unique
   companyId Int
-  joinDate DateTime @default(now())
-  location String?
-  messages Message[]
-  company Company? @relation(fields: [companyId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  joinDate  DateTime  @default(now())
+  location  String?
+  messages  Message[]
+  company   Company?  @relation(fields: [companyId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
-
-model Freelancer{
-  userId Int @id
-  username String @unique
-  languages Language[]
-  portfolio String?
+// Freelancers
+model Freelancer {
+  // id           Int        @id @default(autoincrement())
+  userId       String     @id @unique
+  username     String     @unique @default(cuid())
+  languages    Language[]
+  portfolio    String?
   pricePerHour Int?
   // rating Int @default(0)
-  location String
-  education String?
-  points Int
-  balance Int @default(0)
-  message Message[]
-  user User @relation(fields: [userId], references: [id])
+  location     String
+  education    String?
+  points       Int
+  balance      Int        @default(0)
+  messages     Message[]
+  user         User       @relation(fields: [userId], references: [id])
+  contracts    Contract[]
+  skills       Skill[]
+  tests Test[]
+  // contract Contract
   // language Language @relation(fields: [languages], references: [id])
 }
 
-model Language{
-  id Int @id @default(autoincrement())
-  name String
+model Language {
+  id         Int        @id @default(autoincrement())
+  name       String @unique
   freelancer Freelancer @relation(fields: [speakerId], references: [userId])
-  speakerId Int //FK from Freelancer table
+  speakerId  String //FK from Freelancer table
 }
 
-model Certification{
-  id Int @id @default(autoincrement())
-  name String
-  provider String
-  description String
-  dateEarned DateTime
+model Certification {
+  id                Int      @id @default(autoincrement())
+  name              String
+  provider          String
+  description       String
+  dateEarned        DateTime
   certificationLink String?
 }
 
-model Skill{
-  id Int @id @default(autoincrement())
-  name String @unique
+// table `Test`
+model Test{
+  id        Int                   @id @default(autoincrement())
+  freelancers Freelancer[]
+}
+
+// table `TestResults` 
+model TestResults{
+  freelancer  Freelancer    @relation(fields: [freelancerId], references: [userId])
+  freelancerId   String // relation scalar field (used in the `@relation` attribute above)
+  test   Test @relation(fields: [testId], references: [id])
+  testId Int // relation scalar field (used in the `@relation` attribute above)
+  score Float
+  displayOnProfile Boolean
+  testResultsLink String
+  createdAt DateTime @default(now())
+  @@id([freelancerId, testId])
+}
+
+
+
+
+// Job Posts
+model Job {
+  id                 Int    @id @default(autoincrement())
+  clientId           Int //FK from Freelancer table
+  expectedDurationId Int //FK from ExpectedDuration table
+  complexityId       Int //FK from Complexity table
+  description        String
+  mainSkillId        Int //FK from Skill table
+  paymentTypeId      Int //FK from PaymentType table
+  paymentAmount      Float
+  otherSkill OtherSkills[]
 
 }
 
-model Job{
-id Int @id @default(autoincrement())
-clientId Int //FK from Freelancer table
-expectedDurationId Int //FK from ExpectedDuration table
-complexityId Int //FK from Complexity table
-description String
-mainSkillId Int //FK from Skill table
-paymentTypeId Int //FK from PaymentType table
-paymentAmount Float
-
+model ExpectedDuration {
+  id           Int    @id @default(autoincrement())
+  durationText String @db.Text
 }
 
-model ExpectedDuration{
-  id Int @id @default(autoincrement())
-  durationText String
-}
-
-model Complexity{
+model Complexity {
   // 'easy' , 'intermediate' and 'hard'
-  id Int @id @default(autoincrement())
+  id             Int    @id @default(autoincrement())
   complexityText String @unique
 }
-model OtherSkilss{
-  id Int @id @default(autoincrement())
-  jobId Int //FK from Job table
+
+model OtherSkills {
+  // id      Int @id @default(autoincrement())
+  job Job @relation(fields: [jobId], references: [id])
+  jobId   Int //FK from Job table
+  skill Skill @relation(fields: [skillId], references: [id])
   skillId Int //FK from Skill table
+  @@id([jobId,skillId])
+  // post       Post     @relation(fields: [postId], references: [id])
+  // postId     Int // relation scalar field (used in the `@relation` attribute above)
+  // category   Category @relation(fields: [categoryId], references: [id])
+  // categoryId Int // relation scalar field (used in the `@relation` attribute above)
+  // assignedAt DateTime @default(now())
+  // assignedBy String
 }
 
 // Proposals and Contracts
-model ProposalStatusCatalog{
+model ProposalStatusCatalog {
   // values like proposal sent, negotiation phase, proposal withdrawn, proposal rejected,proposal accepted, job started, job finished(successfully), job finished(unsuccessfully)
-  id Int @id @default(autoincrement())
-  name String @unique
-} 
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  messages  Message[]
+  proposals Proposal[]
 
-model Proposal{
-  proposalId Int @id
-  jobId Int //FK from Job table
-  freelancerId Int //FK from Freelancer table
-  proposalTime DateTime
-  paymentTypeId Int //FK from PaymentType table
-  paymentAmount Int
+
+}
+
+model Proposal {
+  id                    Int                   @id @default(autoincrement())
+  jobId                 Int //FK from Job table
+  freelancerId          Int //FK from Freelancer table
+  paymentTypeId         Int //FK from PaymentType table
+  paymentAmount         Int
+  proposalStatusCatalog ProposalStatusCatalog @relation(fields: [currentProposalStatus], references: [id])
   currentProposalStatus Int //FK from ProposalStatusCatalog table
-  milestones String
-  proposalMessage String
-  hourAmount Int
-  freelancerRating Int? @default(0)
-  freelancerComment String?
-  clientRating Int? @default(0)
-  clientComment String?
-  message Message[]
+  milestones            String
+  proposalMessage       String
+  hourAmount            Int
+  freelancerRating      Int?                  @default(0)
+  freelancerComment     String?
+  clientRating          Int?                  @default(0)
+  clientComment         String?
+  messages              Message[]
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime?
+  contract              Contract?
+  // paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
+  // currentProposalStatus   ProposalStatusCatalog @relation(fields: [proposalStatusCatalogId], references: [id])
+
+
   // isHired Boolean
   // isViewed Boolean
   // isAvailable Boolean
 
 }
 
-model Contract{
-  id Int @id @default(autoincrement())
-  proposalId Int //FK from Proposal table
-  companyId Int //FK from Company table
-  freelancerId Int //FK from Freelancer table
-  startTime DateTime
-  endTime DateTime?
-  paymentTypeId Int //FK from PaymentType table
+model Contract {
+  id            Int         @id @default(autoincrement())
+  proposal      Proposal    @relation(fields: [proposalId], references: [id])
+  proposalId    Int         @unique //FK from Proposal table
+  company       Company     @relation(fields: [companyId], references: [id])
+  companyId     Int //FK from Company table
+  freelancer    Freelancer  @relation(fields: [freelancerId], references: [userId])
+  freelancerId  String //FK from Freelancer table
+  paymentType   PaymentType @relation(fields: [paymentTypeId], references: [id])
+  paymentTypeId Int         @unique //FK from PaymentType table
+  startTime     DateTime
+  endTime       DateTime?
   paymentAmount Float
-
 }
 
-model Message{
-  id Int @id @default(autoincrement())
-  freelancerId Int //FK from Freelancer table
-  clientId Int //FK from Client table
-  messageTime DateTime @default(now())
-  text String
-  proposalId Int //FK from Proposal table
+model Message {
+  id                      Int                   @id @default(autoincrement())
+  freelancer              Freelancer            @relation(fields: [freelancerId], references: [userId])
+  freelancerId            String //FK from Freelancer table
+  client                  Client                @relation(fields: [clientId], references: [id])
+  clientId                Int //FK from Client table
+  messageTime             DateTime              @default(now())
+  text                    String                @db.LongText
+  proposal                Proposal              @relation(fields: [proposalId], references: [id])
+  proposalId              Int //FK from Proposal table
+  currentProposalStatus   ProposalStatusCatalog @relation(fields: [proposalStatusCatalogId], references: [id])
   proposalStatusCatalogId Int //FK from ProposalStatusCatalog table
-  attachement Attachement?
-  freelancer Freelancer @relation(fields: [freelancerId], references: [id])
-  client Client @relation(fields: [clientId], references: [id])
-  proposal Proposal @relation(fields: [proposalId], references: [id])
-  currentProposalStatus ProposalStatusCatalog @relation(fields: [proposalStatusCatalogId], references: [id])
+  attachement             Attachement?
 }
 
-model Attachement{
-  id Int @id @default(autoincrement())
-  messageId Int //FK from Message table
-  text String
-  message Message @relation(fields: [messageId], references: [id])
+model Attachement {
+  id        Int     @id @default(autoincrement())
+  messageId Int     @unique //FK from Message table
+  text      String
+  message   Message @relation(fields: [messageId], references: [id])
 }
