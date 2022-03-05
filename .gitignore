@@ -4,3 +4,21 @@ node_modules
 
 #Keep log files out of version control
 *.log
+
+# Ignore built ts files
+dist/**/*
+
+# Coverage reports
+coverage
+
+# Editors
+.idea
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# ignore yarn.lock and package-lock.json
+yarn.lock
+package-lock.json
