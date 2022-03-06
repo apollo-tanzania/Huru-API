@@ -9,6 +9,7 @@
     "debug": "export DEBUG=* && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:migrate": "npx prisma migrate dev --name init",
+    "prisma:studio": "npx prisma studio",
     "prisma:generate": "npx prisma generate"
   },
   "author": "",
